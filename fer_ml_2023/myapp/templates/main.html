@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Carga de Imágenes</title>
+</head>
+<body>
+    <h1>Cargar Imagen</h1>
+
+
+    <div id="image-section">
+        <form method="post" enctype="multipart/form-data" action="{% url 'result' %}">
+            {% csrf_token %}
+            <input type="file" name="imagen_usuario">
+            <button id="submit-btn" type="submit">Enviar</button>
+            <input type="hidden" id="captured_image" name="captured_image" value="">
+        </form>
+        <button id="show-camera-btn">Usar cámara del computador</button>
+    </div>
+
+    <p id="no-upload-msg" style="display: none;">No se ha subido nada aún</p>
+
+    <div id="camera-section" style="display: none;">
+        <h1>Cámara Web</h1>
+        <video id="video" width="320" height="240" autoplay style="display: none;"></video>
+        <button id="capture-btn" style="display: none;">Tomar Foto</button>
+    </div>
+
+    <script>
+        // Mostrar la cámara al hacer clic en el botón "Usar cámara del computador"
+        document.getElementById('show-camera-btn').addEventListener('click', function() {
+            document.getElementById('camera-section').style.display = 'block';
+            initCamera(); // Llamada para inicializar la cámara
+            document.getElementById('result-section').style.display = 'none';
+        });
+
+        // Acceder a la cámara
+        async function initCamera() {
+            const video = document.getElementById('video');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.style.display = 'block'; // Mostrar el video
+                document.getElementById('capture-btn').style.display = 'block'; // Mostrar el botón "Tomar Foto"
+            } catch (err) {
+                console.error('Error al acceder a la cámara:', err);
+            }
+        }
+
+        document.getElementById('submit-btn').addEventListener('click', function() {
+            const fileInput = document.querySelector('input[type="file"]');
+            const capturedImage = document.getElementById('captured_image');
+            if (fileInput.files.length === 0 && !capturedImage.value) {
+                document.getElementById('no-upload-msg').style.display = 'block';
+                event.preventDefault();
+            }
+        });
+
+        // Capturar foto y descargar como archivo
+        document.getElementById('capture-btn').addEventListener('click', function() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+
+            // Dibujar el fotograma actual del video en el canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            video.pause();
+
+            // Obtener la imagen en formato JPEG
+            const imgData = canvas.toDataURL('image/jpg');
+            document.getElementById('captured_image').value = imgData;
+        });
+
+
+        function revert() {
+            document.getElementById('result-section').style.display = 'none';
+        }
+
+    </script>
+    {% if prediction %}
+    <div id="result-section" on>
+        <img src="/media/img_tra.png" alt="Imagen subida">
+        <p>La expresión facial predicha es: {{ prediction }}</p>
+    </div>
+    {% endif %}
+</body>
+</html>
